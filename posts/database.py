@@ -1,5 +1,6 @@
 import psycopg2
 from psycopg2.extras import RealDictCursor
+import time
 
 try:
     conn = psycopg2.connect(host = 'localhost', database = 'fastapi', user = 'postgres', 
