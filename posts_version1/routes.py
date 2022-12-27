@@ -1,7 +1,7 @@
 from fastapi import FastAPI, status, Response, HTTPException
 from . import database
 from pydantic import BaseModel
-from .database import cursor
+from .database import cursor, conn
 
 app = FastAPI()
 
@@ -25,18 +25,14 @@ def createpost(post: Post):
     cursor.execute("""INSERT INTO posts(title, content, is_published) values (%s, %s, %s) RETURNING *
     """, (post.title, post.content, post.is_published))
     new_post = cursor.fetchone()
+    conn.commit()
     return {"data": new_post}
 
 
 @app.get("/posts/{id}")
 def get_post(id: str):
-    cursor.execute("""SELECT FROM posts WHERE id = %s""", (str(id),))
-    post = cursor.fetchone()
-    if not post:
-        raise (HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-               detail={"message": f"Post of id {id} was not found."}))
-        # response.status_code = status.HTTP_404_NOT_FOUND
-        return {"message": f"Post of id {id} was not found."}
+    cursor.execute("""SELECT * from posts WHERE id = %s """, (str(id),))
+    post = cursor.fetchall()
     return {"Post Detail": post}
 
 
@@ -50,12 +46,8 @@ def find_post_index():
 def delete_post(id: int):
     cursor.execute(
         """DELETE FROM posts WHERE id = %s RETURNING * """, (str(id),))
-    delete_post = cursor.fetchone()
-    cursor.commit()
-    if delete_post == None:
-        raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail={
-                            "message": f"Post of id {id} was not found."})
-
+    delete_post = cursor.fetchall()
+    conn.commit()
     return Response(status_code = status.HTTP_204_NO_CONTENT)
 
 
