@@ -1,11 +1,12 @@
 from fastapi import FastAPI, status, Response, HTTPException
 from . import database
 from pydantic import BaseModel
-from .database import cursor, conn
 from . import models
-from .database import engine, SessionLocal
+from .database import engine, SessionLocal, Base
+from sqlalchemy.orm import Session
+import time
 
-models.Base.metadata.create_all(bind = engine)
+models.Base.metadata.create_all(engine)
 
 app = FastAPI()
 
@@ -30,6 +31,9 @@ def get_post():
     print(posts)
     return {'data': posts}
 
+@app.get('/sqlalchemy')
+def test_posts(db : Session = Depends(get_db)):
+    return {"status":"success"}
 
 @app.post('/posts', status_code=status.HTTP_201_CREATED)
 def createpost(post: Post):
