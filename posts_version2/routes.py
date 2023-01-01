@@ -1,4 +1,4 @@
-from fastapi import FastAPI, status, Response, HTTPException
+from fastapi import FastAPI, status, Response, HTTPException, Depends
 from . import database
 from pydantic import BaseModel
 from . import models
