@@ -59,14 +59,22 @@ def find_post_index():
         if p['id'] == id:
             return i
 
-
 @app.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_post(id: int):
-    cursor.execute(
-        """DELETE FROM posts WHERE id = %s RETURNING * """, (str(id),))
-    delete_post = cursor.fetchall()
-    conn.commit()
+def delete_post(id: int, db : Session = Depends(get_db)):
+    post = db.query(models.Post).filter(models.Post.id == id)
+    if post.first() == None:
+        return HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail=f"Post of id {id} doesn't exist ...")
+    post.delete(synchronize_session = False)
+    db.commit()
     return Response(status_code = status.HTTP_204_NO_CONTENT)
+
+# @app.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
+# def delete_post(id: int):
+#     cursor.execute(
+#         """DELETE FROM posts WHERE id = %s RETURNING * """, (str(id),))
+#     delete_post = cursor.fetchall()
+#     conn.commit()
+#     return Response(status_code = status.HTTP_204_NO_CONTENT)
 
 
 # @app.update("/posts/{id}")
