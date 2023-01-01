@@ -35,7 +35,7 @@ class Post(BaseModel):
 def get_post(db : Session = Depends(get_db)):
     posts = db.query(models.Post).all()
     return posts
-    
+
 @app.get('/sqlalchemy')
 def test_posts(db : Session = Depends(get_db)):
     return {"status":"success"}
@@ -48,21 +48,11 @@ def createpost(post: Post, db : Session = Depends(get_db)):
     db.refresh(new_post)
     return {"data": new_post}
 
-# @app.post('/posts', status_code=status.HTTP_201_CREATED)
-# def createpost(post: Post):
-#     cursor.execute("""INSERT INTO posts(title, content, is_published) values (%s, %s, %s) RETURNING *
-#     """, (post.title, post.content, post.is_published))
-#     new_post = cursor.fetchone()
-#     conn.commit()
-#     return {"data": new_post}
-
 
 @app.get("/posts/{id}")
-def get_post(id: str):
-    cursor.execute("""SELECT * from posts WHERE id = %s """, (str(id),))
-    post = cursor.fetchall()
-    return {"Post Detail": post}
-
+def get_post(id: int, db : Session = Depends(get_db)):
+    post = db.query(models.Post).filter(models.Post.id == id).all()
+    return {"Post": post}
 
 def find_post_index():
     for i, p in enumerate(my_posts):
@@ -90,3 +80,18 @@ def delete_post(id: int):
 #     post['id'] = id
 #     my_posts[index] = post_dict
 #     return {'message': post_dict}
+
+# @app.post('/posts', status_code=status.HTTP_201_CREATED)
+# def createpost(post: Post):
+#     cursor.execute("""INSERT INTO posts(title, content, is_published) values (%s, %s, %s) RETURNING *
+#     """, (post.title, post.content, post.is_published))
+#     new_post = cursor.fetchone()
+#     conn.commit()
+#     return {"data": new_post}
+
+
+# @app.get("/posts/{id}")
+# def get_post(id: str):
+#     cursor.execute("""SELECT * from posts WHERE id = %s """, (str(id),))
+#     post = cursor.fetchall()
+#     return {"Post Detail": post}
