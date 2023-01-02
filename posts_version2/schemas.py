@@ -7,3 +7,7 @@ class PostBase(BaseModel):
 
 class CreatePost(PostBase):
     pass
+
+class Post(PostBase):
+    class Config:
+        orm_mode = True

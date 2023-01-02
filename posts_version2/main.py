@@ -5,14 +5,13 @@ from .database import engine, SessionLocal, Base
 from sqlalchemy.orm import Session
 import time
 from .schemas import *
+from typing import List
 
 models.Base.metadata.create_all(engine)
 
 app = FastAPI()
 
 # dependency
-
-
 def get_db():
     db = SessionLocal()
     try:
@@ -28,7 +27,7 @@ def get_db():
 #     print(posts)
 #     return {'data': posts}
 
-@app.get('/posts')
+@app.get('/posts', response_model=List[Post])
 def get_post(db: Session = Depends(get_db)):
     posts = db.query(models.Post).all()
     return posts
@@ -39,20 +38,20 @@ def test_posts(db: Session = Depends(get_db)):
     return {"status": "success"}
 
 
-@app.post('/posts', status_code=status.HTTP_201_CREATED)
+@app.post('/posts', status_code=status.HTTP_201_CREATED, response_model=Post)
 def createpost(post: CreatePost, db: Session = Depends(get_db)):
     new_post = models.Post(
         title=post.title, content=post.content, published=post.published)
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
-    return {"data": new_post}
+    return new_post
 
 
-@app.get("/posts/{id}")
+@app.get("/posts/{id}", response_model=Post)
 def get_post(id: int, db: Session = Depends(get_db)):
     post = db.query(models.Post).filter(models.Post.id == id).all()
-    return {"Post": post}
+    return  post
 
 
 @app.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -65,7 +64,7 @@ def delete_post(id: int, post:PostBase, db: Session = Depends(get_db)):
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@app.put("/{id}",  status_code=status.HTTP_200_OK)
+@app.put("/{id}",  status_code=status.HTTP_200_OK, response_model=Post)
 def update_post(id: int, updated_post: CreatePost, db: Session = Depends(get_db)):
     post_query = db.query(models.Post).filter(models.Post.id == id)
     post = post_query.first()
