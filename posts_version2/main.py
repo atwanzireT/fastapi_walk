@@ -1,27 +1,24 @@
 from fastapi import FastAPI, status, Response, HTTPException, Depends
 from . import database
-from pydantic import BaseModel
 from . import models
 from .database import engine, SessionLocal, Base
 from sqlalchemy.orm import Session
 import time
+from .schemas import *
 
 models.Base.metadata.create_all(engine)
 
 app = FastAPI()
 
 # dependency
+
+
 def get_db():
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
-
-class Post(BaseModel):
-    title: str
-    content: str
-    is_published: bool = True
 
 
 # @app.get('/posts')
@@ -32,17 +29,20 @@ class Post(BaseModel):
 #     return {'data': posts}
 
 @app.get('/posts')
-def get_post(db : Session = Depends(get_db)):
+def get_post(db: Session = Depends(get_db)):
     posts = db.query(models.Post).all()
     return posts
 
+
 @app.get('/sqlalchemy')
-def test_posts(db : Session = Depends(get_db)):
-    return {"status":"success"}
+def test_posts(db: Session = Depends(get_db)):
+    return {"status": "success"}
+
 
 @app.post('/posts', status_code=status.HTTP_201_CREATED)
-def createpost(post: Post, db : Session = Depends(get_db)):
-    new_post = models.Post(title = post.title, content = post.content, published = post.is_published)
+def createpost(post: CreatePost, db: Session = Depends(get_db)):
+    new_post = models.Post(
+        title=post.title, content=post.content, published=post.published)
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
@@ -50,23 +50,36 @@ def createpost(post: Post, db : Session = Depends(get_db)):
 
 
 @app.get("/posts/{id}")
-def get_post(id: int, db : Session = Depends(get_db)):
+def get_post(id: int, db: Session = Depends(get_db)):
     post = db.query(models.Post).filter(models.Post.id == id).all()
     return {"Post": post}
 
-def find_post_index():
-    for i, p in enumerate(my_posts):
-        if p['id'] == id:
-            return i
 
 @app.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_post(id: int, db : Session = Depends(get_db)):
+def delete_post(id: int, post:PostBase, db: Session = Depends(get_db)):
     post = db.query(models.Post).filter(models.Post.id == id)
     if post.first() == None:
-        return HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail=f"Post of id {id} doesn't exist ...")
-    post.delete(synchronize_session = False)
+        return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Post of id {id} doesn't exist ...")
+    post.delete(synchronize_session=False)
     db.commit()
-    return Response(status_code = status.HTTP_204_NO_CONTENT)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@app.put("/{id}",  status_code=status.HTTP_200_OK)
+def update_post(id: int, updated_post: CreatePost, db: Session = Depends(get_db)):
+    post_query = db.query(models.Post).filter(models.Post.id == id)
+    post = post_query.first()
+    if post == None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f"post with id: {id} does not exist")
+    post_query.update(updated_post.dict(), synchronize_session=False)
+    db.commit()
+    return post_query.first()
+
+# def find_post_index():
+#     for i, p in enumerate(my_posts):
+#         if p['id'] == id:
+#             return i
 
 # @app.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
 # def delete_post(id: int):
