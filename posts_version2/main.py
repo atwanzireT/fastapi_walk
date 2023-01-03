@@ -75,6 +75,15 @@ def update_post(id: int, updated_post: CreatePost, db: Session = Depends(get_db)
     db.commit()
     return post_query.first()
 
+# User
+@app.post('/users', status_code=status.HTTP_201_CREATED, response_model=User)
+def create_user(user:UserCreate, db: Session = Depends(get_db)):
+    new_user = models.User(**user.dict())
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return new_user
+
 # def find_post_index():
 #     for i, p in enumerate(my_posts):
 #         if p['id'] == id:
