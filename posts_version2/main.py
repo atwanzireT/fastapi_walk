@@ -1,98 +1,25 @@
 from fastapi import FastAPI, status, Response, HTTPException, Depends
 from . import database
-from . import models
+from . import models, utils
 from .database import engine, SessionLocal, Base
 from sqlalchemy.orm import Session
 import time
 from .schemas import *
 from typing import List
-from passlib.context import CryptContext
+from .routers import post, user
 
 models.Base.metadata.create_all(engine)
 
 app = FastAPI()
-pwd_crypt = CryptContext(schemes=["bcrypt"], deprecated = "auto")
-# dependency
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
-
+app.include_router(post.router)
+app.include_router(user.router)
 # @app.get('/posts')
 # def get_post():
 #     cursor.execute("""SELECT * FROM posts""")
 #     posts = cursor.fetchall()
 #     print(posts)
 #     return {'data': posts}
-
-@app.get('/posts', response_model=List[Post])
-def get_post(db: Session = Depends(get_db)):
-    posts = db.query(models.Post).all()
-    return posts
-
-
-@app.get('/sqlalchemy')
-def test_posts(db: Session = Depends(get_db)):
-    return {"status": "success"}
-
-
-@app.post('/posts', status_code=status.HTTP_201_CREATED, response_model=Post)
-def createpost(post: CreatePost, db: Session = Depends(get_db)):
-    new_post = models.Post(
-        title=post.title, content=post.content, published=post.published)
-    db.add(new_post)
-    db.commit()
-    db.refresh(new_post)
-    return new_post
-
-
-@app.get("/posts/{id}", response_model=Post)
-def get_post(id: int, db: Session = Depends(get_db)):
-    post = db.query(models.Post).filter(models.Post.id == id).all()
-    return  post
-
-
-@app.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_post(id: int, post:PostBase, db: Session = Depends(get_db)):
-    post = db.query(models.Post).filter(models.Post.id == id)
-    if post.first() == None:
-        return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Post of id {id} doesn't exist ...")
-    post.delete(synchronize_session=False)
-    db.commit()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
-@app.put("/{id}",  status_code=status.HTTP_200_OK, response_model=Post)
-def update_post(id: int, updated_post: CreatePost, db: Session = Depends(get_db)):
-    post_query = db.query(models.Post).filter(models.Post.id == id)
-    post = post_query.first()
-    if post == None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail=f"post with id: {id} does not exist")
-    post_query.update(updated_post.dict(), synchronize_session=False)
-    db.commit()
-    return post_query.first()
-
-# User
-@app.post('/users', status_code=status.HTTP_201_CREATED, response_model=User)
-def create_user(user:UserCreate, db: Session = Depends(get_db)):
-    # hash the password - user.password
-    hashed_password = pwd_crypt.hash(user.password)
-    user.password = hashed_password
-
-    new_user = models.User(**user.dict())
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    return new_user
-
-@app.get("/user{id}", status_code=status.HTTP_200_OK)
-def get_user(id:int, db : Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.id == id).all()
-    return user
 
 # def find_post_index():
 #     for i, p in enumerate(my_posts):
