@@ -1,13 +1,10 @@
 from fastapi import FastAPI, status, Response, HTTPException, Depends
-from . import database
-from . import models, utils
-from .database import engine, SessionLocal, Base
+from .database import engine
 from sqlalchemy.orm import Session
-import time
 from .schemas import *
-from typing import List
 from .routers import post, user
 from .database import get_db
+from . import models
 
 models.Base.metadata.create_all(engine)
 
@@ -19,6 +16,7 @@ def test_posts(db: Session = Depends(get_db)):
 
 app.include_router(post.router)
 app.include_router(user.router)
+
 # @app.get('/posts')
 # def get_post():
 #     cursor.execute("""SELECT * FROM posts""")
