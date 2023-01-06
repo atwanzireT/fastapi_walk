@@ -7,10 +7,15 @@ import time
 from .schemas import *
 from typing import List
 from .routers import post, user
+from .database import get_db
 
 models.Base.metadata.create_all(engine)
 
 app = FastAPI()
+
+@app.get('/sqlalchemy')
+def test_posts(db: Session = Depends(get_db)):
+    return {"status": "success"}
 
 app.include_router(post.router)
 app.include_router(user.router)

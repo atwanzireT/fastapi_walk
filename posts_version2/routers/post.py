@@ -5,20 +5,16 @@ from ..schemas import Post, PostBase, CreatePost
 from ..database import get_db
 from typing import List
 
-router = APIRouter()
+router = APIRouter(
+    prefix = "/posts"
+)
 
-@router.get('/posts', response_model=List[Post])
+@router.get('/', response_model=List[Post])
 def get_post(db: Session = Depends(get_db)):
     posts = db.query(models.Post).all()
     return posts
 
-
-@router.get('/sqlalchemy')
-def test_posts(db: Session = Depends(get_db)):
-    return {"status": "success"}
-
-
-@router.post('/posts', status_code=status.HTTP_201_CREATED, response_model=Post)
+@router.post('/', status_code=status.HTTP_201_CREATED, response_model=Post)
 def createpost(post: CreatePost, db: Session = Depends(get_db)):
     new_post = models.Post(
         title=post.title, content=post.content, published=post.published)
@@ -28,13 +24,13 @@ def createpost(post: CreatePost, db: Session = Depends(get_db)):
     return new_post
 
 
-@router.get("/posts/{id}", response_model=Post)
+@router.get("/{id}", response_model=Post)
 def get_post(id: int, db: Session = Depends(get_db)):
     post = db.query(models.Post).filter(models.Post.id == id).all()
     return  post
 
 
-@router.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_post(id: int, post:PostBase, db: Session = Depends(get_db)):
     post = db.query(models.Post).filter(models.Post.id == id)
     if post.first() == None:
