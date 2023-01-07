@@ -1,7 +1,6 @@
 from fastapi import FastAPI
-from database import engine
-import post
-import user
+from core.database import engine
+from routes import user, post
 
 app = FastAPI()
 
