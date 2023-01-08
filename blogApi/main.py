@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from core.database import engine
-from routes import user, post
+from routes import user, post, auth
 
 app = FastAPI()
 
@@ -9,6 +9,10 @@ app.include_router(
 )
 app.include_router(
     post.router
+)
+
+app.include_router(
+    auth.router
 )
 
 @app.get("/")
