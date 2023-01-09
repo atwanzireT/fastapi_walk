@@ -3,14 +3,14 @@ from sqlalchemy.orm import Session
 from core.database import get_db
 from core.schemas import UserLogin
 from core import models, utils, Oauth2
-
+from fastapi.security.oauth2 import OAuth2PasswordRequestForm
 router = APIRouter(tags=["Authentication"])
 
 
 @router.post("/auth")
-def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
+def login(user_credentials: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = db.query(models.User).filter(
-        models.User.email == user_credentials.email).first()
+        models.User.email == user_credentials.username).first()
 
     if not user:
         raise HTTPException(
