@@ -1,6 +1,13 @@
+from flask import session
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
+
+from core import database, models
 from . import schemas 
+from fastapi import Depends, HTTPException, status
+from fastapi.security.oauth2 import OAuth2PasswordBearer
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth")
 
 # SECRET KEY
 # Algorithm
@@ -28,3 +35,11 @@ def verify_access_token(token : str, credential_exception):
         token_data = schemas.TokenData(id = id)
     except:
         raise credential_exception
+
+
+def get_current_user(token: str = Depends(oauth2_scheme), db: session = Depends(database.get_db)):
+    credentials_exception = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                          detail=f"Could not validate credentials", headers={"WWW-Authenticate": "Bearer"})
+    token = verify_access_token(token, credentials_exception)
+    user = db.query(models.User).filter(models.User.id == token.id).first()
+    return user
