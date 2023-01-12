@@ -1,10 +1,31 @@
 from fastapi import FastAPI, Depends
 from fastapi.security import OAuth2PasswordBearer
+from typing import Union
+from pydantic import BaseModel
 
 app = FastAPI()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
 
+class User(BaseModel):
+    username: str
+    email: Union[str, None] = None
+    full_name: Union[str, None] = None
+    disabled: Union[bool, None] = None
+
 @app.get("/items/")
 async def read_items(token : str = Depends(oauth2_scheme)):
     return {"token" : token}
+
+def fake_decode_token(token):
+    return User(
+        username=token + "fakedecoded", email="john@example.com", full_name="John Doe"
+    )
+
+async def get_current_user(token : str = Depends(oauth2_scheme)):
+    user = fake_decode_token(token)
+    return user
+
+@app.get("/user/me")
+async def read_user_me(current_user : str = Depends(oauth2_scheme)):
+    return current_user
